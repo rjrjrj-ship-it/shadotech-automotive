@@ -21,6 +21,7 @@ export interface Booking {
   paymentMethod: "stripe" | "paypal" | null;
   paymentId: string | null;
   createdAt: string;
+  createdBy: string | null;
 }
 
 // ─── Row ↔ Booking mapping ───────────────────────────────────────────────────
@@ -48,6 +49,7 @@ function fromRow(r: any): Booking {
     paymentMethod: r.payment_method ?? null,
     paymentId:     r.payment_id ?? null,
     createdAt:     r.created_at,
+    createdBy:     r.created_by ?? null,
   };
 }
 
@@ -73,7 +75,7 @@ export async function getBookingById(id: string): Promise<Booking | null> {
 }
 
 export async function createBooking(
-  input: Omit<Booking, "id" | "createdAt" | "status">
+  input: Omit<Booking, "id" | "createdAt" | "status"> & { createdBy?: string | null }
 ): Promise<Booking> {
   const id = `BK-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
   const row = {
@@ -97,6 +99,7 @@ export async function createBooking(
     payment_method: input.paymentMethod,
     payment_id:     input.paymentId,
     created_at:     new Date().toISOString(),
+    created_by:     input.createdBy ?? null,
   };
   const { data, error } = await getSupabase().from("bookings").insert(row).select().single();
   if (error) throw error;

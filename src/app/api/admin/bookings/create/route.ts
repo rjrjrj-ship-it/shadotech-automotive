@@ -17,6 +17,8 @@ export async function POST(req: NextRequest) {
     const endMin = h * 60 + m + Number(duration);
     const endTime = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`;
 
+    const createdBy = req.cookies.get("admin_user")?.value ?? null;
+
     const booking = await createBooking({
       date,
       startTime,
@@ -35,6 +37,7 @@ export async function POST(req: NextRequest) {
       phone: phone || "",
       paymentMethod: null,
       paymentId: null,
+      createdBy,
     });
 
     // Auto-confirm (bypass payment for admin-created bookings)

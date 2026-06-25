@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
       phone:         body.phone,
       paymentMethod: null,
       paymentId:     null,
+      createdBy:     null,
     });
 
     return NextResponse.json({ booking });

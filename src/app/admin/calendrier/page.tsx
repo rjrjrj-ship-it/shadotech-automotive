@@ -16,12 +16,14 @@ interface Booking {
   model: string;
   finition: string;
   years?: string;
+  service?: string;
   serviceLabel: string;
   price: number;
   firstName: string;
   lastName: string;
   phone: string;
   email: string;
+  createdBy?: string | null;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -40,6 +42,24 @@ const STATUS_COLORS: Record<string, string> = {
   pending:   "bg-amber-600 border-amber-500",
   cancelled: "bg-[#3A3A3A] border-[#4A4A4A]",
 };
+
+// Palette de couleurs pour les créneaux bloqués par admin
+const USER_COLORS = [
+  "bg-violet-600 border-violet-500",
+  "bg-blue-600 border-blue-500",
+  "bg-cyan-600 border-cyan-500",
+  "bg-rose-600 border-rose-500",
+  "bg-orange-600 border-orange-500",
+  "bg-pink-600 border-pink-500",
+  "bg-teal-600 border-teal-500",
+  "bg-indigo-600 border-indigo-500",
+];
+
+function colorForUser(username: string): string {
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) hash = (hash * 31 + username.charCodeAt(i)) >>> 0;
+  return USER_COLORS[hash % USER_COLORS.length];
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -327,29 +347,43 @@ function DetailPanel({ booking, onClose, onCancelRequest }: {
         </div>
 
         <div className="space-y-3">
-          <div className="flex items-start gap-2.5">
-            <User size={14} className="text-[#6B7280] mt-0.5 shrink-0" />
-            <div>
-              <div className="text-white text-sm font-semibold">{booking.firstName} {booking.lastName}</div>
-              <div className="text-[#6B7280] text-xs">{booking.email}</div>
-              <div className="text-[#6B7280] text-xs">{booking.phone}</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <Car size={14} className="text-[#6B7280] mt-0.5 shrink-0" />
-            <div>
-              <div className="text-white text-sm">{booking.brand} {booking.model}</div>
-              <div className="text-[#6B7280] text-xs">{booking.finition} · {booking.years}</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <Scissors size={14} className="text-[#6B7280] mt-0.5 shrink-0" />
-            <div className="text-white text-sm">{booking.serviceLabel}</div>
-          </div>
-          <div className="pt-2 border-t border-[#2E2E2E] flex justify-between items-center">
-            <span className="text-[#6B7280] text-xs">Montant</span>
-            <span className="text-[#C62D36] font-bold text-base">{booking.price}€</span>
-          </div>
+          {booking.service === "block" ? (
+            <>
+              <div className="flex items-start gap-2.5">
+                <Lock size={14} className="text-[#6B7280] mt-0.5 shrink-0" />
+                <div>
+                  <div className="text-white text-sm font-semibold">{booking.serviceLabel || "Créneau bloqué"}</div>
+                  {booking.createdBy && <div className="text-[#6B7280] text-xs">Bloqué par {booking.createdBy}</div>}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-2.5">
+                <User size={14} className="text-[#6B7280] mt-0.5 shrink-0" />
+                <div>
+                  <div className="text-white text-sm font-semibold">{booking.firstName} {booking.lastName}</div>
+                  <div className="text-[#6B7280] text-xs">{booking.email}</div>
+                  <div className="text-[#6B7280] text-xs">{booking.phone}</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <Car size={14} className="text-[#6B7280] mt-0.5 shrink-0" />
+                <div>
+                  <div className="text-white text-sm">{booking.brand} {booking.model}</div>
+                  <div className="text-[#6B7280] text-xs">{booking.finition} · {booking.years}</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <Scissors size={14} className="text-[#6B7280] mt-0.5 shrink-0" />
+                <div className="text-white text-sm">{booking.serviceLabel}</div>
+              </div>
+              <div className="pt-2 border-t border-[#2E2E2E] flex justify-between items-center">
+                <span className="text-[#6B7280] text-xs">Montant</span>
+                <span className="text-[#C62D36] font-bold text-base">{booking.price}€</span>
+              </div>
+            </>
+          )}
         </div>
 
         {booking.status !== "cancelled" && (
@@ -373,7 +407,10 @@ function BookingCard({ booking, pixH, onShowDetail }: {
   pixH: number;
   onShowDetail: (b: Booking) => void;
 }) {
-  const colorClass = STATUS_COLORS[booking.status] ?? STATUS_COLORS.confirmed;
+  const isAdminBlock = booking.service === "block" && booking.createdBy;
+  const colorClass = isAdminBlock
+    ? colorForUser(booking.createdBy!)
+    : (STATUS_COLORS[booking.status] ?? STATUS_COLORS.confirmed);
   const compact = pixH < 56;
 
   return (
@@ -389,10 +426,10 @@ function BookingCard({ booking, pixH, onShowDetail }: {
         {!compact && (
           <>
             <div className="text-white/90 text-[11px] font-semibold truncate mt-0.5">
-              {booking.firstName} {booking.lastName}
+              {isAdminBlock ? (booking.serviceLabel || "Créneau bloqué") : `${booking.firstName} ${booking.lastName}`}
             </div>
             <div className="text-white/70 text-[10px] truncate">
-              {booking.brand} {booking.model}
+              {isAdminBlock ? `par ${booking.createdBy}` : `${booking.brand} ${booking.model}`}
             </div>
           </>
         )}
