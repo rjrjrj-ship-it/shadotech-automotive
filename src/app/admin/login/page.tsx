@@ -62,7 +62,7 @@ function LoginForm() {
               onChange={e => setId(e.target.value)}
               required
               autoComplete="username"
-              placeholder="shado-rem"
+              placeholder="Identifiant"
               className="w-full bg-[#111111] border border-[#2E2E2E] focus:border-[#C62D36]/60 rounded-xl px-4 py-3 text-white placeholder-[#4B5563] outline-none transition-all text-sm"
             />
           </div>
