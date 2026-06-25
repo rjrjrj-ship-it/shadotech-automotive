@@ -242,7 +242,9 @@ export function WeekCalendar({ duration, selected, onSelect, refreshKey = 0 }: P
   useEffect(() => { fetchWeek(monday); }, [monday, fetchWeek, refreshKey]);
 
   const days = Array.from({ length: 6 }, (_, i) => addDays(monday, i));
-  const visibleDays = view === "week" ? days : [new Date(dayView)];
+  // Parse dayView as LOCAL time (not UTC) to avoid timezone offset making today appear as past
+  const dayViewDate = (() => { const [y,m,d] = dayView.split("-").map(Number); return new Date(y, m-1, d); })();
+  const visibleDays = view === "week" ? days : [dayViewDate];
 
   return (
     <div className="rounded-2xl overflow-hidden border border-[#333333] bg-[#111111] shadow-2xl">
