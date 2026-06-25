@@ -1,20 +1,26 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import crypto from "crypto";
 
-function getExpectedToken() {
+async function getExpectedToken(): Promise<string> {
   const id     = process.env.ADMIN_USER ?? "";
   const pwd    = process.env.ADMIN_PASS ?? "";
   const secret = process.env.ADMIN_SECRET ?? "shadotech-panel-2026";
-  return crypto.createHmac("sha256", secret).update(`${id}:${pwd}`).digest("hex");
+
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(`${id}:${pwd}`));
+  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
-    const session = request.cookies.get("admin_session")?.value;
-    if (session !== getExpectedToken()) {
+    const session  = request.cookies.get("admin_session")?.value;
+    const expected = await getExpectedToken();
+    if (session !== expected) {
       const loginUrl = new URL("/admin/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
