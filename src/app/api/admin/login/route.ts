@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
   }
 
   const hash = await sha256hex(motdepasse);
+  console.log("[login] username:", identifiant, "hash:", hash);
 
   const { data, error } = await getSupabase()
     .from("admin_users")
@@ -34,6 +35,8 @@ export async function POST(req: NextRequest) {
     .eq("username", identifiant)
     .eq("password_hash", hash)
     .single();
+
+  console.log("[login] supabase result:", { data, error });
 
   if (error || !data) {
     return NextResponse.json({ error: "Identifiant ou mot de passe incorrect." }, { status: 401 });
