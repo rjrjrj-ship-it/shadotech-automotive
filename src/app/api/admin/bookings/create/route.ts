@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ booking: confirmed ?? { ...booking, status: "confirmed" } });
   } catch (e) {
     console.error("[admin/create]", e);
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    const msg = e instanceof Error ? e.message : JSON.stringify(e);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
