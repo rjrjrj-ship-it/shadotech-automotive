@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 export interface Booking {
   id: string;
@@ -54,7 +54,7 @@ function fromRow(r: any): Booking {
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
 export async function getBookings(): Promise<Booking[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("bookings")
     .select("*")
     .order("date", { ascending: true });
@@ -63,7 +63,7 @@ export async function getBookings(): Promise<Booking[]> {
 }
 
 export async function getBookingById(id: string): Promise<Booking | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("bookings")
     .select("*")
     .eq("id", id)
@@ -98,13 +98,13 @@ export async function createBooking(
     payment_id:     input.paymentId,
     created_at:     new Date().toISOString(),
   };
-  const { data, error } = await supabase.from("bookings").insert(row).select().single();
+  const { data, error } = await getSupabase().from("bookings").insert(row).select().single();
   if (error) throw error;
   return fromRow(data);
 }
 
 export async function confirmBooking(id: string, paymentId: string): Promise<Booking | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("bookings")
     .update({ status: "confirmed", payment_id: paymentId })
     .eq("id", id)
@@ -115,7 +115,7 @@ export async function confirmBooking(id: string, paymentId: string): Promise<Boo
 }
 
 export async function cancelBooking(id: string): Promise<boolean> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from("bookings")
     .update({ status: "cancelled" })
     .eq("id", id);
@@ -129,7 +129,7 @@ const PENDING_TTL_MS = 30 * 60 * 1000;
 
 export async function cleanupExpiredPending(): Promise<void> {
   const cutoff = new Date(Date.now() - PENDING_TTL_MS).toISOString();
-  await supabase
+  await getSupabase()
     .from("bookings")
     .update({ status: "cancelled" })
     .eq("status", "pending")
@@ -138,7 +138,7 @@ export async function cleanupExpiredPending(): Promise<void> {
 
 export async function getOccupiedSlots(date: string): Promise<{ start: string; end: string }[]> {
   await cleanupExpiredPending();
-  const { data } = await supabase
+  const { data } = await getSupabase()
     .from("bookings")
     .select("start_time, end_time")
     .eq("date", date)
