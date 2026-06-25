@@ -133,19 +133,33 @@ function DayColumn({
         />
       ))}
 
-      {/* Available slot hit areas — show subtle green tint on hover */}
-      {!isPast && Array.from(available).map(slot => (
-        <div
-          key={slot}
-          className="absolute left-0 right-0 cursor-pointer group"
-          style={{ top: yOf(slot), height: SLOT_H }}
-          onMouseEnter={() => onHover({ date, slot })}
-          onMouseLeave={() => onHover(null)}
-          onClick={() => onSelect(date, slot)}
-        >
-          <div className="absolute inset-x-1 inset-y-0.5 rounded-md group-hover:bg-emerald-500/10 group-hover:border group-hover:border-emerald-500/30 transition-all" />
-        </div>
-      ))}
+      {/* Available slot hit areas */}
+      {!isPast && Array.from(available).map(slot => {
+        const isThisSelected = selected.date === date && selected.slot === slot;
+        return (
+          <div
+            key={slot}
+            className="absolute left-0 right-0 cursor-pointer group"
+            style={{ top: yOf(slot), height: SLOT_H }}
+            onMouseEnter={() => onHover({ date, slot })}
+            onMouseLeave={() => onHover(null)}
+            onClick={() => onSelect(date, slot)}
+            onTouchEnd={(e) => { e.preventDefault(); onSelect(date, slot); }}
+          >
+            <div className={`absolute inset-x-1 inset-y-0.5 rounded-md border transition-all
+              ${isThisSelected
+                ? "bg-[#C62D36]/20 border-[#C62D36]/60"
+                : "bg-emerald-500/8 border-emerald-500/20 group-hover:bg-emerald-500/15 group-hover:border-emerald-500/40 sm:bg-transparent sm:border-transparent sm:group-hover:bg-emerald-500/10 sm:group-hover:border-emerald-500/30"
+              }`}
+            >
+              {/* Show time label on mobile so slots are clearly tappable */}
+              <span className="sm:hidden absolute left-1.5 top-1/2 -translate-y-1/2 text-emerald-400 text-[10px] font-semibold pointer-events-none">
+                {slot}
+              </span>
+            </div>
+          </div>
+        );
+      })}
 
       {/* Preview block */}
       {previewSlot && !isPast && (
@@ -200,11 +214,12 @@ export function WeekCalendar({ duration, selected, onSelect, refreshKey = 0 }: P
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
   const [monday, setMonday]   = useState(() => getMonday(today));
   const [weekData, setWeekData] = useState<WeekData>({});
   const [loading, setLoading]  = useState(false);
   const [hovered, setHovered]  = useState<{ date: string; slot: string } | null>(null);
-  const [view, setView]        = useState<"week" | "day">("week");
+  const [view, setView]        = useState<"week" | "day">(isMobile ? "day" : "week");
   const [dayView, setDayView]  = useState(dateStr(today));
   const fetchRef = useRef("");
 
