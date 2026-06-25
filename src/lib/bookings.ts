@@ -137,14 +137,20 @@ export async function cleanupExpiredPending(): Promise<void> {
 }
 
 export async function getOccupiedSlots(date: string): Promise<{ start: string; end: string }[]> {
-  await cleanupExpiredPending();
-  const { data } = await getSupabase()
-    .from("bookings")
-    .select("start_time, end_time")
-    .eq("date", date)
-    .neq("status", "cancelled");
-  const booked = (data ?? []).map((r) => ({ start: r.start_time, end: r.end_time }));
-  return [BREAK, ...booked];
+  try {
+    await cleanupExpiredPending();
+    const { data, error } = await getSupabase()
+      .from("bookings")
+      .select("start_time, end_time")
+      .eq("date", date)
+      .neq("status", "cancelled");
+    if (error) throw error;
+    const booked = (data ?? []).map((r) => ({ start: r.start_time, end: r.end_time }));
+    return [BREAK, ...booked];
+  } catch (e) {
+    console.error("[getOccupiedSlots] Supabase error:", e);
+    return [BREAK]; // fallback: show all slots except lunch break
+  }
 }
 
 export async function getAvailableSlots(date: string, duration: number): Promise<string[]> {

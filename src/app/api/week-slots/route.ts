@@ -15,12 +15,16 @@ export async function GET(req: NextRequest) {
   const result: Record<string, { occupied: { start: string; end: string }[]; available: string[] }> = {};
 
   for (let i = 0; i < 6; i++) {
-    const d = new Date(weekStart);
-    d.setDate(d.getDate() + i);
-    const dateStr = d.toISOString().slice(0, 10);
-    const occupied  = await getOccupiedSlots(dateStr);
-    const available = computeAvailable(occupied, duration);
-    result[dateStr]  = { occupied, available };
+    try {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + i);
+      const dateStr = d.toISOString().slice(0, 10);
+      const occupied  = await getOccupiedSlots(dateStr);
+      const available = computeAvailable(occupied, duration);
+      result[dateStr]  = { occupied, available };
+    } catch (e) {
+      console.error("[week-slots] Error for day", i, e);
+    }
   }
 
   return NextResponse.json({ week: result });
