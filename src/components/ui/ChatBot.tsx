@@ -251,11 +251,6 @@ export function ChatBot() {
   const [hasNewMsg, setHasNewMsg] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Auto-open on mount + welcome message
-  useEffect(() => {
-    setOpen(true);
-  }, []);
-
   useEffect(() => {
     if (open && messages.length === 0) {
       triggerStep("start", {});
