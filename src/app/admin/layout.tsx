@@ -27,13 +27,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar desktop */}
       <aside className="hidden lg:flex flex-col w-56 shrink-0 bg-[#111111] border-r border-[#2E2E2E] h-screen sticky top-0">
         <div className="px-5 py-6 border-b border-[#2E2E2E]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#C62D36] flex items-center justify-center text-white font-bold text-sm">S</div>
-            <div>
-              <div className="text-white text-sm font-bold leading-tight">Shadotech</div>
-              <div className="text-[#6B7280] text-xs">Panel Admin</div>
-            </div>
-          </div>
+          <div className="text-white font-bold text-base leading-tight">Shadotech Automotive</div>
+          <div className="text-[#6B7280] text-xs mt-0.5">Panel Admin</div>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -67,8 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Mobile header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#111111] border-b border-[#2E2E2E] flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#C62D36] flex items-center justify-center text-white font-bold text-xs">S</div>
-          <span className="text-white font-bold text-sm">Panel Admin</span>
+          <span className="text-white font-bold text-sm">Shadotech Automotive</span>
         </div>
         <button onClick={() => setOpen(o => !o)} className="text-[#9CA3AF] hover:text-white">
           {open ? <X size={20} /> : <Menu size={20} />}

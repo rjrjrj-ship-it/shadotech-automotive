@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { ChatBot } from "@/components/ui/ChatBot";
 import { COMPANY } from "@/lib/utils";
+import PublicShell from "@/components/layout/PublicShell";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -109,11 +110,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#111111" />
       </head>
       <body className="min-h-screen flex flex-col bg-[#111111] text-[#F5F5F5] font-[var(--font-outfit)] antialiased">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <WhatsAppButton />
-        <ChatBot />
+        <PublicShell>{children}</PublicShell>
       </body>
     </html>
   );
