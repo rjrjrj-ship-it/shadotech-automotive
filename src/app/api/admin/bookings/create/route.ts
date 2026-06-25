@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createBooking } from "@/lib/bookings";
+import { createBooking, confirmBooking } from "@/lib/bookings";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "date, startTime et duration sont requis" }, { status: 400 });
     }
 
-    // Compute endTime
     const [h, m] = startTime.split(":").map(Number);
     const endMin = h * 60 + m + Number(duration);
     const endTime = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`;
@@ -38,14 +37,11 @@ export async function POST(req: NextRequest) {
       paymentId: null,
     });
 
-    // Auto-confirm admin-created bookings
-    const { getSupabase } = await import("@/lib/supabase");
-    await getSupabase().from("bookings").update({ status: "confirmed" }).eq("id", booking.id);
-    booking.status = "confirmed";
-
-    return NextResponse.json({ booking });
+    // Auto-confirm (bypass payment for admin-created bookings)
+    const confirmed = await confirmBooking(booking.id, "admin");
+    return NextResponse.json({ booking: confirmed ?? { ...booking, status: "confirmed" } });
   } catch (e) {
     console.error("[admin/create]", e);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
