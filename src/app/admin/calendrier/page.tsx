@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ChevronLeft, ChevronRight, User, Car, Scissors, XCircle, AlertTriangle, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, User, Car, Scissors, XCircle, AlertTriangle, X, Plus, Lock } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -133,6 +133,167 @@ function CancelModal({ booking, onConfirm, onClose, loading }: {
   );
 }
 
+// ─── Create Modal ─────────────────────────────────────────────────────────────
+
+function CreateModal({ defaultDate, defaultSlot, onClose, onCreated }: {
+  defaultDate: string;
+  defaultSlot: string;
+  onClose: () => void;
+  onCreated: (b: Booking) => void;
+}) {
+  const [mode, setMode] = useState<"block"|"client">("block");
+  const [date, setDate]           = useState(defaultDate);
+  const [startTime, setStartTime] = useState(defaultSlot);
+  const [duration, setDuration]   = useState(60);
+  const [note, setNote]           = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName]   = useState("");
+  const [email, setEmail]         = useState("");
+  const [phone, setPhone]         = useState("");
+  const [brand, setBrand]         = useState("");
+  const [model, setModel]         = useState("");
+  const [service, setService]     = useState("");
+  const [price, setPrice]         = useState(0);
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState("");
+
+  const slots: string[] = [];
+  for (let t = 9*60; t < 18*60; t += 30) {
+    const h = String(Math.floor(t/60)).padStart(2,"0");
+    const m = String(t%60).padStart(2,"0");
+    slots.push(`${h}:${m}`);
+  }
+
+  async function save() {
+    setSaving(true); setError("");
+    try {
+      const body = mode === "block"
+        ? { date, startTime, duration, brand: "—", model: "—", years: "", finition: "",
+            service: "block", serviceLabel: note || "Créneau bloqué",
+            price: 0, firstName: "Shadotech", lastName: "", email: "contact@shadotech.lu", phone: "" }
+        : { date, startTime, duration, brand, model, years: "", finition: "",
+            service: service || "autre", serviceLabel: service || "Prestation",
+            price, firstName, lastName, email, phone };
+
+      const res = await fetch("/api/admin/bookings/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Erreur"); return; }
+      onCreated(data.booking);
+      onClose();
+    } catch { setError("Erreur réseau"); }
+    finally { setSaving(false); }
+  }
+
+  const inputCls = "w-full bg-[#111111] border border-[#2E2E2E] focus:border-[#C62D36]/60 rounded-xl px-3 py-2 text-white placeholder-[#4B5563] outline-none text-sm transition-all";
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div className="relative bg-[#1A1A1A] border border-[#3A3A3A] rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-4 right-4 text-[#6B7280] hover:text-white transition-colors"><X size={18} /></button>
+
+        <h2 className="text-white font-bold text-xl mb-5">Nouveau créneau</h2>
+
+        {/* Mode toggle */}
+        <div className="flex rounded-xl overflow-hidden border border-[#2E2E2E] mb-5">
+          {([["block","Bloquer un créneau"],["client","Rendez-vous client"]] as const).map(([m, label]) => (
+            <button key={m} onClick={() => setMode(m)} className={`flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-2 transition-all ${mode===m?"bg-[#C62D36] text-white":"bg-[#111111] text-[#6B7280] hover:text-white"}`}>
+              {m==="block" ? <Lock size={13}/> : <User size={13}/>}
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="space-y-3">
+          {/* Date + heure */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[#6B7280] text-xs mb-1 block">Date</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="text-[#6B7280] text-xs mb-1 block">Heure de début</label>
+              <select value={startTime} onChange={e => setStartTime(e.target.value)} className={inputCls}>
+                {slots.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[#6B7280] text-xs mb-1 block">Durée</label>
+            <select value={duration} onChange={e => setDuration(Number(e.target.value))} className={inputCls}>
+              {[30,60,90,120,150,180,240].map(d => <option key={d} value={d}>{d} min</option>)}
+            </select>
+          </div>
+
+          {mode === "block" ? (
+            <div>
+              <label className="text-[#6B7280] text-xs mb-1 block">Note (optionnel)</label>
+              <input value={note} onChange={e => setNote(e.target.value)} placeholder="Ex: Véhicule personnel, Formation…" className={inputCls} />
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[#6B7280] text-xs mb-1 block">Prénom</label>
+                  <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Jean" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-[#6B7280] text-xs mb-1 block">Nom</label>
+                  <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Dupont" className={inputCls} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[#6B7280] text-xs mb-1 block">Email</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="jean@email.com" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-[#6B7280] text-xs mb-1 block">Téléphone</label>
+                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+352 …" className={inputCls} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[#6B7280] text-xs mb-1 block">Marque</label>
+                  <input value={brand} onChange={e => setBrand(e.target.value)} placeholder="BMW" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-[#6B7280] text-xs mb-1 block">Modèle</label>
+                  <input value={model} onChange={e => setModel(e.target.value)} placeholder="Série 3" className={inputCls} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[#6B7280] text-xs mb-1 block">Prestation</label>
+                  <input value={service} onChange={e => setService(e.target.value)} placeholder="Vitres teintées…" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-[#6B7280] text-xs mb-1 block">Prix (€)</label>
+                  <input type="number" value={price} onChange={e => setPrice(Number(e.target.value))} className={inputCls} />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {error && <div className="mt-3 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">{error}</div>}
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 py-3 border border-[#2E2E2E] hover:border-[#4A4A4A] text-[#9CA3AF] hover:text-white rounded-xl text-sm font-medium transition-all">Annuler</button>
+          <button onClick={save} disabled={saving} className="flex-1 py-3 bg-[#C62D36] hover:bg-[#a82530] disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2">
+            {saving ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Création…</> : <><Plus size={15}/>Créer</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Detail Panel (rendered at page level, no overflow issues) ────────────────
 
 function DetailPanel({ booking, onClose, onCancelRequest }: {
@@ -214,7 +375,7 @@ function BookingCard({ booking, pixH, onShowDetail }: {
     <div
       className={`absolute left-1.5 right-1.5 rounded-lg border shadow-lg cursor-pointer z-10 overflow-hidden transition-all hover:brightness-110 ${colorClass}`}
       style={{ top: 3, height: pixH - 6 }}
-      onClick={() => onShowDetail(booking)}
+      onClick={(e) => { e.stopPropagation(); onShowDetail(booking); }}
     >
       <div className="px-2 pt-1">
         <div className="text-white text-[11px] font-bold leading-tight truncate">
@@ -240,16 +401,27 @@ function BookingCard({ booking, pixH, onShowDetail }: {
 const BREAK_START = "12:30";
 const BREAK_END   = "13:00";
 
-function DayColumn({ date, bookings, isToday, isPast, onShowDetail }: {
+function DayColumn({ date, bookings, isToday, isPast, onShowDetail, onCreateSlot }: {
   date: string; bookings: Booking[]; isToday: boolean; isPast: boolean;
   onShowDetail: (b: Booking) => void;
+  onCreateSlot: (date: string, slot: string) => void;
 }) {
   const totalH = TOTAL_ROWS * SLOT_H;
   const yOf = (t: string) => ((toMin(t) - DAY_START) / 30) * SLOT_H;
   const hOf = (min: number) => (min / 30) * SLOT_H;
 
+  function handleColumnClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (isPast) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const minuteOffset = Math.floor(y / SLOT_H) * 30;
+    const absMin = DAY_START + minuteOffset;
+    const slot = `${String(Math.floor(absMin/60)).padStart(2,"0")}:${String(absMin%60).padStart(2,"0")}`;
+    onCreateSlot(date, slot);
+  }
+
   return (
-    <div className={`flex-1 min-w-0 relative border-r border-[#2A2A2A]`} style={{ height: totalH }}>
+    <div className={`flex-1 min-w-0 relative border-r border-[#2A2A2A] cursor-cell`} style={{ height: totalH }} onClick={handleColumnClick}>
       {/* Grid lines */}
       {Array.from({ length: TOTAL_ROWS }).map((_, i) => (
         <div key={i} className={`absolute left-0 right-0 ${i%2===0 ? "border-t border-[#252525]" : "border-t border-[#1C1C1C]"}`} style={{ top: i*SLOT_H }} />
@@ -312,6 +484,7 @@ export default function AdminCalendrierPage() {
   const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
+  const [createModal, setCreateModal] = useState<{ date: string; slot: string } | null>(null);
 
   const fetchBookings = useCallback(async () => {
     const key = dateStr(monday);
@@ -371,6 +544,20 @@ export default function AdminCalendrierPage() {
         />
       )}
 
+      {/* Create modal */}
+      {createModal && (
+        <CreateModal
+          defaultDate={createModal.date}
+          defaultSlot={createModal.slot}
+          onClose={() => setCreateModal(null)}
+          onCreated={(b) => {
+            setAllBookings(prev => [...prev, b]);
+            setCreateModal(null);
+            fetchRef.current = "";
+          }}
+        />
+      )}
+
       {/* Page header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -400,12 +587,20 @@ export default function AdminCalendrierPage() {
             </button>
           </div>
           <span className="text-white font-bold hidden sm:block">{formatWeekTitle(monday)}</span>
+          <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCreateModal({ date: view === "day" ? dayView : dateStr(days[0]), slot: "09:00" })}
+            className="h-9 px-3.5 flex items-center gap-1.5 rounded-xl bg-[#C62D36] hover:bg-[#a82530] text-white text-sm font-semibold transition-all"
+          >
+            <Plus size={15} /> Nouveau
+          </button>
           <div className="flex rounded-xl overflow-hidden border border-[#2E2E2E]">
             {(["week","day"] as const).map(v => (
               <button key={v} onClick={() => setView(v)} className={`px-4 py-2 text-sm font-medium transition-all ${view===v?"bg-[#C62D36] text-white":"bg-[#2A2A2A] text-[#9CA3AF] hover:text-white"}`}>
                 {v==="week"?"Semaine":"Jour"}
               </button>
             ))}
+          </div>
           </div>
         </div>
 
@@ -451,6 +646,7 @@ export default function AdminCalendrierPage() {
                   isToday={ds===dateStr(today)}
                   isPast={d<today}
                   onShowDetail={setDetailBooking}
+                  onCreateSlot={(date, slot) => setCreateModal({ date, slot })}
                 />
               );
             })}
