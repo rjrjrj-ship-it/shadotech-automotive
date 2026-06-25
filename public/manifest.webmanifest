@@ -1,0 +1,22 @@
+{
+  "name": "Shadotech Automotive",
+  "short_name": "Shadotech",
+  "description": "Customisation automobile premium au Luxembourg — vitres teintées, covering, PPF, ciel étoilé, CarPlay.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0D0D",
+  "theme_color": "#E63946",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/icon",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-icon",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
