@@ -350,6 +350,11 @@ export function ChatBot() {
         {hasNewMsg && (
           <span className="absolute top-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-[#111111] animate-pulse" />
         )}
+        {/* Bulle "Besoin d'aide ?" */}
+        <span className="absolute bottom-16 right-0 bg-white text-[#111111] text-xs font-semibold px-3 py-1.5 rounded-2xl shadow-lg whitespace-nowrap pointer-events-none">
+          Besoin d&apos;aide ?
+          <span className="absolute bottom-[-6px] right-4 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white" />
+        </span>
       </button>
 
       {/* Chat window */}
