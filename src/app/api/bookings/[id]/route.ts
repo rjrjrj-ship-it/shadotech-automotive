@@ -12,11 +12,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const booking = await getBookingById(id);
-  if (!booking) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
-  if (booking.status === "confirmed") {
-    return NextResponse.json({ error: "Impossible d'annuler un RDV confirmé ici" }, { status: 400 });
-  }
-  await cancelBooking(id);
+  const ok = await cancelBooking(id);
+  if (!ok) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
   return NextResponse.json({ ok: true });
 }
