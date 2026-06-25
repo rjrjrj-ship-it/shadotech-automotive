@@ -45,7 +45,12 @@ const STATUS_COLORS: Record<string, string> = {
 
 function toMin(t: string) { const [h,m] = t.split(":").map(Number); return h*60+m; }
 function fromMin(m: number) { return `${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`; }
-function dateStr(d: Date) { return d.toISOString().slice(0,10); }
+function dateStr(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 function getMonday(d: Date) {
   const dt = new Date(d); const day = dt.getDay();
   dt.setDate(dt.getDate() + (day===0 ? -6 : 1-day)); dt.setHours(0,0,0,0); return dt;
