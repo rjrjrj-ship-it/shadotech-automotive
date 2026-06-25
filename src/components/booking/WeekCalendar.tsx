@@ -253,19 +253,46 @@ export function WeekCalendar({ duration, selected, onSelect, refreshKey = 0 }: P
       <div className="flex items-center justify-between px-5 py-3.5 bg-[#1A1A1A] border-b border-[#333333]">
         <div className="flex items-center gap-1.5">
           <button
-            onClick={() => { setMonday(m => addDays(m, -7)); fetchRef.current = ""; }}
+            onClick={() => {
+              if (view === "day") {
+                const [y,m,d] = dayView.split("-").map(Number);
+                const prev = addDays(new Date(y,m-1,d), -1);
+                setDayView(dateStr(prev));
+                setMonday(getMonday(prev));
+                fetchRef.current = "";
+              } else {
+                setMonday(m => addDays(m, -7));
+                fetchRef.current = "";
+              }
+            }}
             className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#2A2A2A] hover:bg-[#3A3A3A] text-[#9CA3AF] hover:text-white transition-all"
           >
             <ChevronLeft size={16} />
           </button>
           <button
-            onClick={() => { setMonday(m => addDays(m, 7)); fetchRef.current = ""; }}
+            onClick={() => {
+              if (view === "day") {
+                const [y,m,d] = dayView.split("-").map(Number);
+                const next = addDays(new Date(y,m-1,d), 1);
+                const nextStr = dateStr(next);
+                setDayView(nextStr);
+                setMonday(getMonday(next));
+                fetchRef.current = "";
+              } else {
+                setMonday(m => addDays(m, 7));
+                fetchRef.current = "";
+              }
+            }}
             className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#2A2A2A] hover:bg-[#3A3A3A] text-[#9CA3AF] hover:text-white transition-all"
           >
             <ChevronRight size={16} />
           </button>
           <button
-            onClick={() => { setMonday(getMonday(today)); fetchRef.current = ""; }}
+            onClick={() => {
+              setMonday(getMonday(today));
+              if (view === "day") setDayView(dateStr(today));
+              fetchRef.current = "";
+            }}
             className="px-3.5 h-9 text-sm font-medium rounded-xl bg-[#2A2A2A] hover:bg-[#3A3A3A] text-[#9CA3AF] hover:text-white transition-all"
           >
             Aujourd'hui
