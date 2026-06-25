@@ -143,7 +143,9 @@ function DayColumn({
             style={{ top: yOf(slot), height: SLOT_H }}
             onMouseEnter={() => onHover({ date, slot })}
             onMouseLeave={() => onHover(null)}
-            onPointerDown={(e) => { e.preventDefault(); onSelect(date, slot); }}
+            onClick={() => onSelect(date, slot)}
+            onTouchStart={() => onHover({ date, slot })}
+            onTouchEnd={() => { onSelect(date, slot); onHover(null); }}
           >
             <div className={`absolute inset-x-1 inset-y-0.5 rounded-md border transition-all
               ${isThisSelected
