@@ -39,7 +39,24 @@ const FLOWS: Record<string, (ctx: Context) => Step> = {
 
   // ── Vitres teintées ──
   vitres: () => ({
-    text: "Super ! Pour les vitres teintées, nous utilisons exclusivement les films **SUNTEK HP** — 7 teintes disponibles.\n\nQuel type de véhicule avez-vous ?",
+    text: "Super ! Pour les vitres teintées, nous proposons deux gammes de films **SunTek®** :\n\n🥈 **HP — High Performance** : film hybride métallisé, apparence réfléchissante, excellente durée de vie. Meilleur rapport qualité/prix.\n\n🥇 **Evolve — Céramique** : nano-céramique dernière génération, protection thermique et UV maximale, sans interférence avec les signaux GPS/téléphone. Notre gamme premium.\n\nLaquelle vous correspond ?",
+    options: [
+      { label: "HP — Bon rapport qualité/prix", value: "vt_gamme_hp", emoji: "🥈" },
+      { label: "Evolve — Protection maximale", value: "vt_gamme_evolve", emoji: "🥇" },
+      { label: "Aide moi à choisir", value: "vt_conseil_gamme", emoji: "💬" },
+    ],
+  }),
+
+  vt_conseil_gamme: () => ({
+    text: "Voici comment choisir :\n\n🥈 **HP** — Idéal si vous souhaitez une belle teinte avec un budget maîtrisé. Film métallisé, légèrement réfléchissant, très bonne longévité.\n\n🥇 **Evolve** — Recommandé si vous cherchez la performance maximale : chaleur rejetée supérieure, protection UV totale, film céramique invisible et neutre en fréquences radio.\n\nQuelle gamme vous convient ?",
+    options: [
+      { label: "HP — Bon rapport qualité/prix", value: "vt_gamme_hp", emoji: "🥈" },
+      { label: "Evolve — Protection maximale", value: "vt_gamme_evolve", emoji: "🥇" },
+    ],
+  }),
+
+  vt_gamme_hp: () => ({
+    text: "Excellent choix ! Film **SunTek HP**.\n\nQuel type de véhicule avez-vous ?",
     options: [
       { label: "Citadine", value: "vt_citadine", emoji: "🚗" },
       { label: "Berline", value: "vt_berline", emoji: "🚘" },
@@ -50,40 +67,48 @@ const FLOWS: Record<string, (ctx: Context) => Step> = {
     ],
   }),
 
-  vt_citadine: () => ({ text: "", options: [], _goto: "vt_teinte" }),
-  vt_berline:  () => ({ text: "", options: [], _goto: "vt_teinte" }),
-  vt_suv:      () => ({ text: "", options: [], _goto: "vt_teinte" }),
-  vt_break:    () => ({ text: "", options: [], _goto: "vt_teinte" }),
-  vt_utilitaire: () => ({ text: "", options: [], _goto: "vt_teinte" }),
-  vt_cabriolet: () => ({ text: "", options: [], _goto: "vt_teinte" }),
+  vt_gamme_evolve: () => ({
+    text: "Excellent choix ! Film **SunTek Evolve Céramique**.\n\nQuel type de véhicule avez-vous ?",
+    options: [
+      { label: "Citadine", value: "vt_citadine", emoji: "🚗" },
+      { label: "Berline", value: "vt_berline", emoji: "🚘" },
+      { label: "SUV / 4x4", value: "vt_suv", emoji: "🚙" },
+      { label: "Break", value: "vt_break", emoji: "🚐" },
+      { label: "Utilitaire", value: "vt_utilitaire", emoji: "🚌" },
+      { label: "Cabriolet", value: "vt_cabriolet", emoji: "🏎️" },
+    ],
+  }),
 
-  vt_teinte: (ctx) => {
-    const vehicle = ctx.vehicle ?? "berline";
+  vt_citadine:   () => ({ text: "", options: [], _goto: "vt_zone" }),
+  vt_berline:    () => ({ text: "", options: [], _goto: "vt_zone" }),
+  vt_suv:        () => ({ text: "", options: [], _goto: "vt_zone" }),
+  vt_break:      () => ({ text: "", options: [], _goto: "vt_zone" }),
+  vt_utilitaire: () => ({ text: "", options: [], _goto: "vt_zone" }),
+  vt_cabriolet:  () => ({ text: "", options: [], _goto: "vt_zone" }),
+
+  vt_zone: (ctx) => {
     const names: Record<string, string> = {
       citadine: "citadine", berline: "berline", suv: "SUV",
       break: "break", utilitaire: "utilitaire", cabriolet: "cabriolet",
     };
+    const v = ctx.vehicle ?? "berline";
     return {
-      text: `Parfait pour votre ${names[vehicle]} !\n\nQuelle teinte souhaitez-vous ? (VLT = lumière transmise — plus c'est bas, plus c'est sombre)`,
+      text: `Parfait pour votre ${names[v]} !\n\nQuelle zone souhaitez-vous teinter ?`,
       options: [
-        { label: "70% VLT — Légal toutes vitres", value: "vt_price_70", emoji: "✅" },
-        { label: "50% VLT — Discret", value: "vt_price_50", emoji: "🌤️" },
-        { label: "35% VLT — Équilibré", value: "vt_price_35", emoji: "🌥️" },
-        { label: "30% VLT — Prononcé", value: "vt_price_30", emoji: "⛅" },
-        { label: "20% VLT — Sombre", value: "vt_price_20", emoji: "🌑" },
-        { label: "15% VLT — Très sombre", value: "vt_price_15", emoji: "🌑" },
-        { label: "3% VLT — Limo", value: "vt_price_03", emoji: "🖤" },
+        { label: "Complet (toutes vitres)", value: "vt_price_complet", emoji: "🚗" },
+        { label: "Vitres avant seulement", value: "vt_price_avant", emoji: "🪟" },
+        { label: "3/4 arrière seulement", value: "vt_price_arriere", emoji: "🪟" },
+        { label: "Pare-brise noir", value: "vt_price_parebrise_noir", emoji: "🖤" },
+        { label: "Pare-brise caméléon", value: "vt_price_parebrise_cam", emoji: "🌈" },
       ],
     };
   },
 
-  vt_price_70: (ctx) => buildVtPrice(ctx, 70),
-  vt_price_50: (ctx) => buildVtPrice(ctx, 50),
-  vt_price_35: (ctx) => buildVtPrice(ctx, 35),
-  vt_price_30: (ctx) => buildVtPrice(ctx, 30),
-  vt_price_20: (ctx) => buildVtPrice(ctx, 20),
-  vt_price_15: (ctx) => buildVtPrice(ctx, 15),
-  vt_price_03: (ctx) => buildVtPrice(ctx, 3),
+  vt_price_complet:       (ctx) => buildVtZonePrice(ctx, "complet"),
+  vt_price_avant:         (ctx) => buildVtZonePrice(ctx, "avant"),
+  vt_price_arriere:       (ctx) => buildVtZonePrice(ctx, "arriere"),
+  vt_price_parebrise_noir:(ctx) => buildVtZonePrice(ctx, "parebrise_noir"),
+  vt_price_parebrise_cam: (ctx) => buildVtZonePrice(ctx, "parebrise_cam"),
 
   // ── Covering ──
   covering: () => ({
@@ -192,32 +217,86 @@ const FLOWS: Record<string, (ctx: Context) => Step> = {
 
 // ─── Price helper ─────────────────────────────────────────────────────────────
 
-const PRICES: Record<string, Record<number, number>> = {
-  citadine:    { 70: 38, 50: 44, 35: 50, 30: 54, 20: 60, 15: 66, 3: 74 },
-  berline:     { 70: 42, 50: 50, 35: 58, 30: 62, 20: 70, 15: 76, 3: 85 },
-  suv:         { 70: 48, 50: 58, 35: 68, 30: 74, 20: 83, 15: 91, 3: 100 },
-  break:       { 70: 44, 50: 53, 35: 62, 30: 67, 20: 74, 15: 82, 3: 90 },
-  utilitaire:  { 70: 52, 50: 64, 35: 75, 30: 82, 20: 91, 15: 100, 3: 110 },
-  cabriolet:   { 70: 44, 50: 52, 35: 60, 30: 65, 20: 73, 15: 80, 3: 88 },
+// Prices per zone per vehicle type (HP / Evolve)
+// Source: tarif Polestar (SUV) — scalé pour les autres catégories
+const ZONE_PRICES: Record<string, Record<string, { hp: number; evolve: number }>> = {
+  complet: {
+    citadine:   { hp: 280, evolve: 420 },
+    berline:    { hp: 320, evolve: 470 },
+    suv:        { hp: 350, evolve: 520 },
+    break:      { hp: 335, evolve: 490 },
+    utilitaire: { hp: 380, evolve: 560 },
+    cabriolet:  { hp: 300, evolve: 450 },
+  },
+  avant: {
+    citadine:   { hp: 120, evolve: 170 },
+    berline:    { hp: 135, evolve: 185 },
+    suv:        { hp: 150, evolve: 200 },
+    break:      { hp: 140, evolve: 190 },
+    utilitaire: { hp: 160, evolve: 215 },
+    cabriolet:  { hp: 130, evolve: 175 },
+  },
+  arriere: {
+    citadine:   { hp: 220, evolve: 360 },
+    berline:    { hp: 245, evolve: 390 },
+    suv:        { hp: 260, evolve: 420 },
+    break:      { hp: 250, evolve: 400 },
+    utilitaire: { hp: 280, evolve: 450 },
+    cabriolet:  { hp: 230, evolve: 370 },
+  },
+  parebrise_noir: {
+    citadine:   { hp: 170, evolve: 260 },
+    berline:    { hp: 185, evolve: 275 },
+    suv:        { hp: 200, evolve: 300 },
+    break:      { hp: 190, evolve: 285 },
+    utilitaire: { hp: 210, evolve: 315 },
+    cabriolet:  { hp: 180, evolve: 270 },
+  },
+  parebrise_cam: {
+    citadine:   { hp: 240, evolve: null as unknown as number },
+    berline:    { hp: 260, evolve: null as unknown as number },
+    suv:        { hp: 280, evolve: null as unknown as number },
+    break:      { hp: 270, evolve: null as unknown as number },
+    utilitaire: { hp: 295, evolve: null as unknown as number },
+    cabriolet:  { hp: 250, evolve: null as unknown as number },
+  },
 };
 
-function buildVtPrice(ctx: Context, vlt: number): Step {
+const ZONE_LABELS: Record<string, string> = {
+  complet:        "Complet (toutes vitres)",
+  avant:          "Vitres avant",
+  arriere:        "3/4 arrière",
+  parebrise_noir: "Pare-brise bande noire",
+  parebrise_cam:  "Pare-brise caméléon",
+};
+
+function buildVtZonePrice(ctx: Context, zone: string): Step {
   const vehicle = ctx.vehicle ?? "berline";
-  const pricePerWindow = PRICES[vehicle]?.[vlt] ?? 50;
-  const min = pricePerWindow * 2;
-  const max = pricePerWindow * 7;
-  const legalNote = vlt === 70
-    ? "✅ Ce film est légal sur toutes les vitres au Luxembourg."
-    : vlt === 50
-    ? "⚠️ Recommandé pour les vitres arrières."
-    : "⚠️ Réservé aux vitres arrières uniquement (Code de la Route LU).";
+  const gamme   = ctx.gamme ?? "hp";
+  const prices  = ZONE_PRICES[zone]?.[vehicle];
+  const price   = prices?.[gamme as "hp" | "evolve"];
+  const label   = ZONE_LABELS[zone] ?? zone;
+  const gammeLabel = gamme === "evolve" ? "SunTek Evolve Céramique 🥇" : "SunTek HP 🥈";
+
+  if (!price) {
+    return {
+      text: `Le pare-brise caméléon est disponible uniquement en gamme HP.\n\n💰 **${ZONE_PRICES[zone]?.[vehicle]?.hp ?? 280}€** pour votre ${vehicle}.\n\nPrenons rendez-vous pour confirmer le tarif exact !`,
+      options: [],
+      _cta: true,
+      _links: [{ label: "Prendre rendez-vous", href: "/vitres-teintees#reservation" }],
+    };
+  }
+
+  const hpPrice     = ZONE_PRICES[zone]?.[vehicle]?.hp;
+  const evolvePrice = ZONE_PRICES[zone]?.[vehicle]?.evolve;
+  const economie    = gamme === "evolve" && hpPrice ? evolvePrice - hpPrice : null;
 
   return {
-    text: `Film SUNTEK HP ${vlt}% VLT — ${legalNote}\n\n💰 **Estimation : ${min}€ à ${max}€** selon le nombre de vitres (${pricePerWindow}€/vitre).\n\nPour un tarif exact, utilisez notre outil de réservation en ligne ou prenez rendez-vous.`,
+    text: `Film **${gammeLabel}** — ${label}\n\n💰 **${price}€** pour votre ${vehicle}${economie ? `\n\n_(+${economie}€ vs HP pour une protection thermique et UV maximale)_` : ""}\n\nPrenons rendez-vous pour confirmer le tarif exact et choisir votre teinte !`,
     options: [],
     _cta: true,
     _links: [
-      { label: "Réserver & calculer le tarif exact", href: "/vitres-teintees#reservation" },
+      { label: "Réserver en ligne", href: "/vitres-teintees#reservation" },
     ],
   };
 }
@@ -234,6 +313,7 @@ interface Step {
 
 interface Context {
   vehicle?: string;
+  gamme?: "hp" | "evolve";
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -308,7 +388,12 @@ export function ChatBot() {
 
     // Update context
     const newCtx = { ...ctx };
-    if (opt.value.startsWith("vt_") && !opt.value.startsWith("vt_price") && !opt.value.startsWith("vt_teinte")) {
+    // Detect gamme selection
+    if (opt.value === "vt_gamme_hp")     newCtx.gamme = "hp";
+    if (opt.value === "vt_gamme_evolve") newCtx.gamme = "evolve";
+    // Detect vehicle selection
+    const vehicleKeys = ["vt_citadine","vt_berline","vt_suv","vt_break","vt_utilitaire","vt_cabriolet"];
+    if (vehicleKeys.includes(opt.value)) {
       newCtx.vehicle = opt.value.replace("vt_", "");
     }
     setCtx(newCtx);
