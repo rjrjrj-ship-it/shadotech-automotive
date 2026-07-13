@@ -16,19 +16,42 @@ interface VehicleEntry {
 
 const vehicles = vehiclesRaw as Record<string, Record<string, VehicleEntry[]>>;
 
-type Step = "brand" | "model" | "variant" | "service" | "calendar" | "info" | "payment" | "done";
+type Step = "brand" | "model" | "variant" | "service" | "gamme" | "calendar" | "info" | "payment" | "done";
 
 interface Selection {
   brand: string;
   model: string;
   variant: VehicleEntry | null;
   service: ServiceKey | null;
+  gamme: "hp" | "evolve" | null;
   date: string;
   slot: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
+}
+
+// Services that require HP/Evolve gamme selection (tinting, not removal)
+const VT_TINTING_KEYS: ServiceKey[] = ["complet", "vitre_avant", "arriere_34", "pb_noir", "pb_cameleon"];
+
+// Evolve price multiplier per service (vs HP base price)
+const EVOLVE_FACTOR: Partial<Record<ServiceKey, number>> = {
+  complet:     520 / 350,
+  vitre_avant: 200 / 150,
+  arriere_34:  420 / 260,
+  pb_noir:     300 / 200,
+  // pb_cameleon: not available in Evolve
+};
+
+function isVtService(key: ServiceKey | null): boolean {
+  return key !== null && VT_TINTING_KEYS.includes(key);
+}
+
+function evolvePrice(basePrice: number, key: ServiceKey): number | null {
+  const factor = EVOLVE_FACTOR[key];
+  if (!factor) return null;
+  return Math.round(basePrice * factor);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -38,13 +61,15 @@ const STEP_LABELS: Record<Step, string> = {
   model:    "Modèle",
   variant:  "Version",
   service:  "Prestation",
+  gamme:    "Gamme",
   calendar: "Date & Heure",
   info:     "Vos infos",
   payment:  "Paiement",
   done:     "Confirmé",
 };
 
-const STEPS: Step[] = ["brand", "model", "variant", "service", "calendar", "info", "payment", "done"];
+const STEPS: Step[] = ["brand", "model", "variant", "service", "gamme", "calendar", "info", "payment", "done"];
+const STEPS_NO_GAMME: Step[] = ["brand", "model", "variant", "service", "calendar", "info", "payment", "done"];
 
 function formatDate(d: string) {
   if (!d) return "";
@@ -55,9 +80,10 @@ function formatDate(d: string) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function StepBar({ current }: { current: Step }) {
-  const idx = STEPS.indexOf(current);
-  const visible = STEPS.slice(0, -1); // exclude "done"
+function StepBar({ current, vtFlow }: { current: Step; vtFlow: boolean }) {
+  const steps = vtFlow ? STEPS : STEPS_NO_GAMME;
+  const idx = steps.indexOf(current);
+  const visible = steps.slice(0, -1); // exclude "done"
   return (
     <div className="flex items-center gap-1 mb-8 overflow-x-auto pb-1">
       {visible.map((s, i) => (
@@ -145,13 +171,15 @@ function SearchSelect({
 export function VehicleBookingWizard() {
   const [step, setStep] = useState<Step>("brand");
   const [sel, setSel] = useState<Selection>({
-    brand: "", model: "", variant: null, service: null,
+    brand: "", model: "", variant: null, service: null, gamme: null,
     date: "", slot: "", firstName: "", lastName: "", email: "", phone: "",
   });
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [calRefreshKey, setCalRefreshKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const vtFlow = isVtService(sel.service);
 
   const brandList = Object.keys(vehicles).sort();
   const modelList = sel.brand ? Object.keys(vehicles[sel.brand] ?? {}).sort() : [];
@@ -167,8 +195,13 @@ export function VehicleBookingWizard() {
     if (s === "calendar") setCalRefreshKey(k => k + 1);
   }
   function back() {
-    const idx = STEPS.indexOf(step);
-    if (idx > 0) go(STEPS[idx - 1]);
+    const steps = vtFlow ? STEPS : STEPS_NO_GAMME;
+    const idx = steps.indexOf(step);
+    if (idx > 0) go(steps[idx - 1]);
+  }
+  function afterService() {
+    if (isVtService(sel.service)) go("gamme");
+    else go("calendar");
   }
 
   // ── Submit booking
@@ -177,6 +210,12 @@ export function VehicleBookingWizard() {
     setSubmitting(true);
     setError(null);
     try {
+      const basePrice = currentService.price;
+      const finalPrice = sel.gamme === "evolve"
+        ? (evolvePrice(basePrice, sel.service) ?? basePrice)
+        : basePrice;
+      const gammeLabel = sel.gamme === "evolve" ? " — Gamme Evolve Ceramic" : sel.gamme === "hp" ? " — Gamme HP" : "";
+      const finalLabel = SERVICE_LABELS[sel.service] + gammeLabel;
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -189,8 +228,8 @@ export function VehicleBookingWizard() {
           years: sel.variant.years,
           finition: sel.variant.finition,
           service: sel.service,
-          serviceLabel: SERVICE_LABELS[sel.service],
-          price: currentService.price,
+          serviceLabel: finalLabel,
+          price: finalPrice,
           firstName: sel.firstName,
           lastName: sel.lastName,
           email: sel.email,
@@ -237,7 +276,7 @@ export function VehicleBookingWizard() {
 
   return (
     <div className="bg-[#111111] border border-[#2E2E2E] rounded-3xl p-6 sm:p-8 w-full">
-      <StepBar current={step} />
+      <StepBar current={step} vtFlow={vtFlow} />
 
       {/* ── ÉTAPE 1 : Marque */}
       {step === "brand" && (
@@ -333,7 +372,7 @@ export function VehicleBookingWizard() {
               return (
                 <button
                   key={key}
-                  onClick={() => setSel(s => ({ ...s, service: key }))}
+                  onClick={() => setSel(s => ({ ...s, service: key, gamme: null }))}
                   className={`w-full flex items-center justify-between px-4 py-4 rounded-xl border text-left transition-all ${
                     sel.service === key
                       ? "border-[#C62D36] bg-[#C62D36]/10"
@@ -353,6 +392,105 @@ export function VehicleBookingWizard() {
             })}
           </div>
           {sel.service && (
+            <button onClick={afterService} className="mt-4 w-full py-3 bg-[#C62D36] hover:bg-[#a82530] text-white font-semibold rounded-xl transition-all">
+              {isVtService(sel.service) ? "Choisir la gamme →" : "Choisir une date →"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── ÉTAPE 5 : Gamme */}
+      {step === "gamme" && sel.service && currentService && (
+        <div>
+          <button onClick={back} className="flex items-center gap-1 text-[#6B7280] hover:text-white text-sm mb-4 transition-colors">
+            <ChevronLeft size={14} /> Retour
+          </button>
+          <h3 className="text-white font-bold text-xl mb-1">Choisissez votre gamme</h3>
+          <p className="text-[#6B7280] text-sm mb-6">{SERVICE_LABELS[sel.service]} · {sel.brand} {sel.model}</p>
+
+          <div className="space-y-4">
+            {/* HP */}
+            <button
+              onClick={() => { setSel(s => ({ ...s, gamme: "hp" })); }}
+              className={`w-full text-left px-5 py-5 rounded-xl border transition-all ${
+                sel.gamme === "hp"
+                  ? "border-[#C62D36] bg-[#C62D36]/10"
+                  : "border-[#2E2E2E] bg-[#1A1A1A] hover:border-[#C62D36]/40"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-white font-bold text-base">Gamme HP</span>
+                    <span className="text-xs bg-[#2E2E2E] text-[#9CA3AF] px-2 py-0.5 rounded-full">High Performance</span>
+                  </div>
+                  <p className="text-[#9CA3AF] text-sm mb-3">Film hybride métallisé haute performance. Excellent rapport qualité/prix, protection UV supérieure et discrétion optimale. Garantie 5 ans.</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["Garantie 5 ans", "Protection UV 99%", "Film métallisé", "Homologué route"].map(tag => (
+                      <span key={tag} className="text-xs bg-[#2E2E2E] text-[#6B7280] px-2 py-0.5 rounded-full">{tag}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-[#C62D36] font-bold text-lg">{currentService.price}€</div>
+                  <div className="text-[#6B7280] text-xs">dès</div>
+                </div>
+              </div>
+            </button>
+
+            {/* Evolve */}
+            {(() => {
+              const ep = evolvePrice(currentService.price, sel.service!);
+              const unavailable = ep === null;
+              return (
+                <button
+                  disabled={unavailable}
+                  onClick={() => { if (!unavailable) setSel(s => ({ ...s, gamme: "evolve" })); }}
+                  className={`w-full text-left px-5 py-5 rounded-xl border transition-all ${
+                    unavailable ? "opacity-40 cursor-not-allowed border-[#2E2E2E] bg-[#1A1A1A]" :
+                    sel.gamme === "evolve"
+                      ? "border-[#C62D36] bg-[#C62D36]/10"
+                      : "border-[#C62D36]/30 bg-[#1A1A1A] hover:border-[#C62D36]/60"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-white font-bold text-base">Gamme Evolve</span>
+                        <span className="text-xs bg-[#C62D36]/20 text-[#C62D36] px-2 py-0.5 rounded-full font-semibold">Premium</span>
+                        {unavailable && <span className="text-xs text-[#6B7280]">· Non disponible</span>}
+                      </div>
+                      <p className="text-[#9CA3AF] text-sm mb-3">Film nano-céramique haut de gamme. Rejet thermique exceptionnel, clarté visuelle maximale et protection UV renforcée. La référence absolue.</p>
+                      <div className="flex flex-wrap gap-2">
+                        {["Garantie à vie", "Nano-céramique", "Rejet thermique max", "Clarté maximale"].map(tag => (
+                          <span key={tag} className="text-xs bg-[#C62D36]/10 text-[#C62D36]/80 px-2 py-0.5 rounded-full">{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {ep !== null ? (
+                        <>
+                          <div className="text-[#C62D36] font-bold text-lg">{ep}€</div>
+                          <div className="text-[#6B7280] text-xs">dès</div>
+                        </>
+                      ) : (
+                        <div className="text-[#6B7280] text-sm">N/A</div>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })()}
+          </div>
+
+          {/* Comparison note */}
+          <div className="mt-4 bg-[#1A1A1A] border border-[#2E2E2E] rounded-xl p-4">
+            <p className="text-[#6B7280] text-xs">
+              <span className="text-white font-medium">Vous hésitez ?</span> La gamme HP offre un excellent résultat pour la majorité des usages. La gamme Evolve est recommandée pour un confort thermique supérieur et une longévité maximale.
+            </p>
+          </div>
+
+          {sel.gamme && (
             <button onClick={() => go("calendar")} className="mt-4 w-full py-3 bg-[#C62D36] hover:bg-[#a82530] text-white font-semibold rounded-xl transition-all">
               Choisir une date →
             </button>
@@ -360,7 +498,7 @@ export function VehicleBookingWizard() {
         </div>
       )}
 
-      {/* ── ÉTAPE 5 : Calendrier */}
+      {/* ── ÉTAPE 6 (or 5 without gamme) : Calendrier */}
       {step === "calendar" && currentService && (
         <div>
           <button onClick={back} className="flex items-center gap-1 text-[#6B7280] hover:text-white text-sm mb-4 transition-colors">
