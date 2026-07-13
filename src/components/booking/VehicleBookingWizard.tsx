@@ -233,6 +233,14 @@ export function VehicleBookingWizard() {
 
   const currentService = sel.service ? serviceData[sel.service] : null;
 
+  // Final price: use ZONE_PRICES for VT services, fallback to vehicles.json
+  const zonePrice = (sel.service && sel.variant && isVtService(sel.service))
+    ? getZonePrice(sel.variant.finition, sel.service)
+    : null;
+  const finalPrice = zonePrice
+    ? (sel.gamme === "evolve" ? (zonePrice.evolve ?? zonePrice.hp) : zonePrice.hp)
+    : (currentService?.price ?? 0);
+
   // ── Navigation helpers
   function go(s: Step) {
     setStep(s);
@@ -255,10 +263,6 @@ export function VehicleBookingWizard() {
     setSubmitting(true);
     setError(null);
     try {
-      const zp = isVtService(sel.service) ? getZonePrice(sel.variant.finition, sel.service) : null;
-      const finalPrice = zp
-        ? (sel.gamme === "evolve" ? (zp.evolve ?? zp.hp) : zp.hp)
-        : currentService.price;
       const gammeLabel = sel.gamme === "evolve" ? " — Gamme Evolve Ceramic" : sel.gamme === "hp" ? " — Gamme HP" : "";
       const finalLabel = SERVICE_LABELS[sel.service] + gammeLabel;
       const res = await fetch("/api/bookings", {
@@ -595,7 +599,7 @@ export function VehicleBookingWizard() {
             </div>
             <div className="flex items-center gap-2 font-bold text-white pt-1 border-t border-[#2E2E2E] mt-1">
               <CreditCard size={14} className="text-[#C62D36]" />
-              Total : {currentService?.price}€
+              Total : {finalPrice}€
             </div>
           </div>
 
@@ -648,7 +652,7 @@ export function VehicleBookingWizard() {
             <div className="text-[#9CA3AF] text-sm">{SERVICE_LABELS[sel.service!]}</div>
             <div className="text-[#9CA3AF] text-sm">{formatDate(sel.date)} à {sel.slot}</div>
             <div className="text-white font-bold text-lg pt-2 border-t border-[#2E2E2E] mt-2">
-              Total : {currentService?.price}€
+              Total : {finalPrice}€
             </div>
             <div className="text-[#6B7280] text-xs">Réf. {bookingId}</div>
           </div>
