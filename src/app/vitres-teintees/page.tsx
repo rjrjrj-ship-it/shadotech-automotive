@@ -247,55 +247,102 @@ export default function VitresTeintees() {
               </ul>
             </div>
 
-            {/* Film comparison */}
-            <div className="bg-[#1A1A1A] border border-[#2E2E2E] rounded-2xl overflow-hidden">
-              <div className="p-4 border-b border-[#2E2E2E] flex items-center justify-between">
-                <span className="text-white font-semibold">Films SUNTEK HP disponibles</span>
-                <span className="text-[#C62D36] text-xs font-medium">7 teintes</span>
-              </div>
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[#2E2E2E]">
-                    <th className="text-left p-3 text-[#6B7280] text-xs">Teinte</th>
-                    <th className="text-center p-3 text-[#6B7280] text-xs">VLT</th>
-                    <th className="text-center p-3 text-[#6B7280] text-xs">Légal LU</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { pct: 70, legal: "all",      legalLabel: "✓ Toutes vitres" },
-                    { pct: 50, legal: "rear",     legalLabel: "Arr. recommandé" },
-                    { pct: 35, legal: "rear",     legalLabel: "Arr. recommandé" },
-                    { pct: 30, legal: "rear-only", legalLabel: "Arr. uniquement" },
-                    { pct: 20, legal: "rear-only", legalLabel: "Arr. uniquement" },
-                    { pct: 15, legal: "rear-only", legalLabel: "Arr. uniquement" },
-                    { pct:  3, legal: "rear-only", legalLabel: "Arr. uniquement" },
-                  ].map((f) => (
-                    <tr key={f.pct} className="border-b border-[#2E2E2E] last:border-0">
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-5 h-5 rounded border border-white/10 shrink-0"
-                            style={{ background: `rgba(0,0,0,${1 - f.pct / 100})` }}
-                          />
-                          <span className="text-white text-sm font-medium">{f.pct}%</span>
-                        </div>
-                      </td>
-                      <td className="p-3 text-center text-[#9CA3AF] text-sm">{f.pct}% VLT</td>
-                      <td className="p-3 text-center">
-                        <span className={`text-xs ${
-                          f.legal === "all" ? "text-green-400 font-medium" :
-                          f.legal === "rear" ? "text-amber-400" :
-                          "text-orange-400"
-                        }`}>{f.legalLabel}</span>
-                      </td>
+            {/* Film comparison — 2 gammes */}
+            <div className="space-y-3">
+              {/* HP */}
+              <div className="bg-[#1A1A1A] border border-[#2E2E2E] rounded-2xl overflow-hidden">
+                <div className="p-4 border-b border-[#2E2E2E] flex items-center justify-between">
+                  <div>
+                    <span className="text-white font-semibold">SunTek® HP — High Performance</span>
+                    <p className="text-[#6B7280] text-xs mt-0.5">Film hybride métallisé · Aspect réfléchissant · Garantie 5 ans</p>
+                  </div>
+                  <span className="text-[#9CA3AF] text-xs font-medium bg-[#2A2A2A] px-2 py-1 rounded-lg">7 teintes</span>
+                </div>
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[#2E2E2E]">
+                      <th className="text-left p-3 text-[#6B7280] text-xs">Teinte</th>
+                      <th className="text-center p-3 text-[#6B7280] text-xs">VLT</th>
+                      <th className="text-center p-3 text-[#6B7280] text-xs">Légal LU</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="p-3 border-t border-[#2E2E2E] text-[#6B7280] text-xs">
-                VLT = Visible Light Transmission · Réglementation : Règlement grand-ducal du 23 novembre 1955 modifié
+                  </thead>
+                  <tbody>
+                    {[
+                      { pct: 70, legal: "all",       legalLabel: "✓ Toutes vitres" },
+                      { pct: 50, legal: "rear",      legalLabel: "Arr. recommandé" },
+                      { pct: 35, legal: "rear",      legalLabel: "Arr. recommandé" },
+                      { pct: 30, legal: "rear-only", legalLabel: "Arr. uniquement" },
+                      { pct: 20, legal: "rear-only", legalLabel: "Arr. uniquement" },
+                      { pct: 15, legal: "rear-only", legalLabel: "Arr. uniquement" },
+                      { pct:  3, legal: "rear-only", legalLabel: "Arr. uniquement" },
+                    ].map((f) => (
+                      <tr key={f.pct} className="border-b border-[#2E2E2E] last:border-0">
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded border border-white/10 shrink-0" style={{ background: `rgba(0,0,0,${1 - f.pct / 100})` }} />
+                            <span className="text-white text-sm font-medium">{f.pct}%</span>
+                          </div>
+                        </td>
+                        <td className="p-3 text-center text-[#9CA3AF] text-sm">{f.pct}% VLT</td>
+                        <td className="p-3 text-center">
+                          <span className={`text-xs ${f.legal === "all" ? "text-green-400 font-medium" : f.legal === "rear" ? "text-amber-400" : "text-orange-400"}`}>{f.legalLabel}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+
+              {/* Evolve */}
+              <div className="bg-[#1A1A1A] border border-[#C62D36]/30 rounded-2xl overflow-hidden">
+                <div className="p-4 border-b border-[#C62D36]/20 flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-semibold">SunTek® Evolve — Céramique</span>
+                      <span className="text-[10px] bg-[#C62D36] text-white px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide">Premium</span>
+                    </div>
+                    <p className="text-[#6B7280] text-xs mt-0.5">Nano-céramique · Protection thermique & UV maximale · Sans interférence radio</p>
+                  </div>
+                  <span className="text-[#C62D36] text-xs font-medium bg-[#C62D36]/10 px-2 py-1 rounded-lg">7 teintes</span>
+                </div>
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[#2E2E2E]">
+                      <th className="text-left p-3 text-[#6B7280] text-xs">Teinte</th>
+                      <th className="text-center p-3 text-[#6B7280] text-xs">VLT</th>
+                      <th className="text-center p-3 text-[#6B7280] text-xs">Légal LU</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { pct: 70, legal: "all",       legalLabel: "✓ Toutes vitres" },
+                      { pct: 50, legal: "rear",      legalLabel: "Arr. recommandé" },
+                      { pct: 35, legal: "rear",      legalLabel: "Arr. recommandé" },
+                      { pct: 30, legal: "rear-only", legalLabel: "Arr. uniquement" },
+                      { pct: 20, legal: "rear-only", legalLabel: "Arr. uniquement" },
+                      { pct: 15, legal: "rear-only", legalLabel: "Arr. uniquement" },
+                      { pct:  3, legal: "rear-only", legalLabel: "Arr. uniquement" },
+                    ].map((f) => (
+                      <tr key={f.pct} className="border-b border-[#2E2E2E] last:border-0">
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded border border-white/10 shrink-0" style={{ background: `rgba(0,0,0,${1 - f.pct / 100})` }} />
+                            <span className="text-white text-sm font-medium">{f.pct}%</span>
+                          </div>
+                        </td>
+                        <td className="p-3 text-center text-[#9CA3AF] text-sm">{f.pct}% VLT</td>
+                        <td className="p-3 text-center">
+                          <span className={`text-xs ${f.legal === "all" ? "text-green-400 font-medium" : f.legal === "rear" ? "text-amber-400" : "text-orange-400"}`}>{f.legalLabel}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="text-[#6B7280] text-xs text-center">
+                VLT = Visible Light Transmission · Réglementation : Règlement grand-ducal du 23 novembre 1955 modifié
+              </p>
             </div>
           </div>
         </div>
