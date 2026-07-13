@@ -119,6 +119,21 @@ export default function ContactPage() {
                 <label className="text-[#9CA3AF] text-sm mb-1.5 block">Message</label>
                 <textarea name="message" rows={4} required placeholder="Décrivez votre projet..." className="w-full bg-[#111111] border border-[#2E2E2E] rounded-xl px-4 py-3 text-white placeholder-[#4E4E4E] focus:border-[#C62D36] outline-none transition-colors resize-none" />
               </div>
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  name="rgpd"
+                  required
+                  className="mt-0.5 w-4 h-4 shrink-0 accent-[#C62D36] cursor-pointer"
+                />
+                <span className="text-[#6B7280] text-sm leading-relaxed group-hover:text-[#9CA3AF] transition-colors">
+                  J&apos;accepte que mes données personnelles soient collectées et traitées par Shadotech Automotive dans le but de répondre à ma demande, conformément au{" "}
+                  <a href="/politique-confidentialite" className="text-[#C62D36] hover:underline">
+                    Règlement Général sur la Protection des Données (RGPD)
+                  </a>
+                  .
+                </span>
+              </label>
               <button type="submit" className="w-full py-3.5 bg-[#C62D36] hover:bg-[#a82530] text-white font-semibold rounded-xl transition-all hover:shadow-[0_0_20px_rgba(230,57,70,0.4)]">
                 Envoyer le message
               </button>
