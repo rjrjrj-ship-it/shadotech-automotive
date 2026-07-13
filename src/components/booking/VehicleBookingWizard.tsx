@@ -35,23 +35,68 @@ interface Selection {
 // Services that require HP/Evolve gamme selection (tinting, not removal)
 const VT_TINTING_KEYS: ServiceKey[] = ["complet", "vitre_avant", "arriere_34", "pb_noir", "pb_cameleon"];
 
-// Evolve price multiplier per service (vs HP base price)
-const EVOLVE_FACTOR: Partial<Record<ServiceKey, number>> = {
-  complet:     520 / 350,
-  vitre_avant: 200 / 150,
-  arriere_34:  420 / 260,
-  pb_noir:     300 / 200,
-  // pb_cameleon: not available in Evolve
+// Exact prices per zone per vehicle category — from Excel tarif
+const ZONE_PRICES: Record<string, Record<string, { hp: number; evolve: number | null }>> = {
+  complet: {
+    citadine:   { hp: 280, evolve: 420 },
+    berline:    { hp: 320, evolve: 470 },
+    suv:        { hp: 350, evolve: 520 },
+    break:      { hp: 335, evolve: 490 },
+    utilitaire: { hp: 380, evolve: 560 },
+    cabriolet:  { hp: 300, evolve: 450 },
+  },
+  vitre_avant: {
+    citadine:   { hp: 120, evolve: 170 },
+    berline:    { hp: 135, evolve: 185 },
+    suv:        { hp: 150, evolve: 200 },
+    break:      { hp: 140, evolve: 190 },
+    utilitaire: { hp: 160, evolve: 215 },
+    cabriolet:  { hp: 130, evolve: 175 },
+  },
+  arriere_34: {
+    citadine:   { hp: 220, evolve: 360 },
+    berline:    { hp: 245, evolve: 390 },
+    suv:        { hp: 260, evolve: 420 },
+    break:      { hp: 250, evolve: 400 },
+    utilitaire: { hp: 280, evolve: 450 },
+    cabriolet:  { hp: 230, evolve: 370 },
+  },
+  pb_noir: {
+    citadine:   { hp: 170, evolve: 260 },
+    berline:    { hp: 185, evolve: 275 },
+    suv:        { hp: 200, evolve: 300 },
+    break:      { hp: 190, evolve: 285 },
+    utilitaire: { hp: 210, evolve: 315 },
+    cabriolet:  { hp: 180, evolve: 270 },
+  },
+  pb_cameleon: {
+    citadine:   { hp: 240, evolve: null },
+    berline:    { hp: 260, evolve: null },
+    suv:        { hp: 280, evolve: null },
+    break:      { hp: 270, evolve: null },
+    utilitaire: { hp: 295, evolve: null },
+    cabriolet:  { hp: 250, evolve: null },
+  },
 };
+
+function detectVehicleCategory(finition: string): string {
+  const f = finition.toLowerCase();
+  if (/suv|4x4|crossover|velar/.test(f)) return "suv";
+  if (/break|touring|estate|sw\b|shooting|beak/.test(f)) return "break";
+  if (/cabriolet|roadster|targa|twin top/.test(f)) return "cabriolet";
+  if (/monospace|van\b|ludospace|utilitaire|pick.?up/.test(f)) return "utilitaire";
+  if (/\b2\s*portes?\b|\b2porte/.test(f)) return "citadine";
+  if (/\b3\s*portes?\b|\b3porte/.test(f)) return "citadine";
+  return "berline";
+}
+
+function getZonePrice(finition: string, key: ServiceKey): { hp: number; evolve: number | null } | null {
+  const cat = detectVehicleCategory(finition);
+  return ZONE_PRICES[key]?.[cat] ?? null;
+}
 
 function isVtService(key: ServiceKey | null): boolean {
   return key !== null && VT_TINTING_KEYS.includes(key);
-}
-
-function evolvePrice(basePrice: number, key: ServiceKey): number | null {
-  const factor = EVOLVE_FACTOR[key];
-  if (!factor) return null;
-  return Math.round(basePrice * factor);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -210,10 +255,10 @@ export function VehicleBookingWizard() {
     setSubmitting(true);
     setError(null);
     try {
-      const basePrice = currentService.price;
-      const finalPrice = sel.gamme === "evolve"
-        ? (evolvePrice(basePrice, sel.service) ?? basePrice)
-        : basePrice;
+      const zp = isVtService(sel.service) ? getZonePrice(sel.variant.finition, sel.service) : null;
+      const finalPrice = zp
+        ? (sel.gamme === "evolve" ? (zp.evolve ?? zp.hp) : zp.hp)
+        : currentService.price;
       const gammeLabel = sel.gamme === "evolve" ? " — Gamme Evolve Ceramic" : sel.gamme === "hp" ? " — Gamme HP" : "";
       const finalLabel = SERVICE_LABELS[sel.service] + gammeLabel;
       const res = await fetch("/api/bookings", {
@@ -384,7 +429,11 @@ export function VehicleBookingWizard() {
                     <div className="text-[#6B7280] text-xs mt-0.5">{SERVICE_DESC[key]}</div>
                   </div>
                   <div className="text-right ml-4 shrink-0">
-                    <div className="text-[#C62D36] font-bold">{svc.price}€</div>
+                    <div className="text-[#C62D36] font-bold">
+                      {isVtService(key) && sel.variant
+                        ? (getZonePrice(sel.variant.finition, key)?.hp ?? svc.price)
+                        : svc.price}€
+                    </div>
                     <div className="text-[#6B7280] text-xs">{svc.duration} min</div>
                   </div>
                 </button>
@@ -400,7 +449,7 @@ export function VehicleBookingWizard() {
       )}
 
       {/* ── ÉTAPE 5 : Gamme */}
-      {step === "gamme" && sel.service && currentService && (
+      {step === "gamme" && sel.service && sel.variant && currentService && (
         <div>
           <button onClick={back} className="flex items-center gap-1 text-[#6B7280] hover:text-white text-sm mb-4 transition-colors">
             <ChevronLeft size={14} /> Retour
@@ -408,46 +457,47 @@ export function VehicleBookingWizard() {
           <h3 className="text-white font-bold text-xl mb-1">Choisissez votre gamme</h3>
           <p className="text-[#6B7280] text-sm mb-6">{SERVICE_LABELS[sel.service]} · {sel.brand} {sel.model}</p>
 
-          <div className="space-y-4">
-            {/* HP */}
-            <button
-              onClick={() => { setSel(s => ({ ...s, gamme: "hp" })); }}
-              className={`w-full text-left px-5 py-5 rounded-xl border transition-all ${
-                sel.gamme === "hp"
-                  ? "border-[#C62D36] bg-[#C62D36]/10"
-                  : "border-[#2E2E2E] bg-[#1A1A1A] hover:border-[#C62D36]/40"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-white font-bold text-base">Gamme HP</span>
-                    <span className="text-xs bg-[#2E2E2E] text-[#9CA3AF] px-2 py-0.5 rounded-full">High Performance</span>
-                  </div>
-                  <p className="text-[#9CA3AF] text-sm mb-3">Film hybride métallisé haute performance. Excellent rapport qualité/prix, protection UV supérieure et discrétion optimale. Garantie 5 ans.</p>
-                  <div className="flex flex-wrap gap-2">
-                    {["Garantie 5 ans", "Protection UV 99%", "Film métallisé", "Homologué route"].map(tag => (
-                      <span key={tag} className="text-xs bg-[#2E2E2E] text-[#6B7280] px-2 py-0.5 rounded-full">{tag}</span>
-                    ))}
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="text-[#C62D36] font-bold text-lg">{currentService.price}€</div>
-                  <div className="text-[#6B7280] text-xs">dès</div>
-                </div>
-              </div>
-            </button>
-
-            {/* Evolve */}
-            {(() => {
-              const ep = evolvePrice(currentService.price, sel.service!);
-              const unavailable = ep === null;
-              return (
+          {(() => {
+            const zp = getZonePrice(sel.variant!.finition, sel.service!);
+            const hpPrice = zp?.hp ?? currentService.price;
+            const eprice = zp?.evolve ?? null;
+            return (
+              <div className="space-y-4">
+                {/* HP */}
                 <button
-                  disabled={unavailable}
-                  onClick={() => { if (!unavailable) setSel(s => ({ ...s, gamme: "evolve" })); }}
+                  onClick={() => setSel(s => ({ ...s, gamme: "hp" }))}
                   className={`w-full text-left px-5 py-5 rounded-xl border transition-all ${
-                    unavailable ? "opacity-40 cursor-not-allowed border-[#2E2E2E] bg-[#1A1A1A]" :
+                    sel.gamme === "hp"
+                      ? "border-[#C62D36] bg-[#C62D36]/10"
+                      : "border-[#2E2E2E] bg-[#1A1A1A] hover:border-[#C62D36]/40"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-white font-bold text-base">Gamme HP</span>
+                        <span className="text-xs bg-[#2E2E2E] text-[#9CA3AF] px-2 py-0.5 rounded-full">High Performance</span>
+                      </div>
+                      <p className="text-[#9CA3AF] text-sm mb-3">Film hybride métallisé haute performance. Excellent rapport qualité/prix, protection UV supérieure et discrétion optimale. Garantie 5 ans.</p>
+                      <div className="flex flex-wrap gap-2">
+                        {["Garantie 5 ans", "Protection UV 99%", "Film métallisé", "Homologué route"].map(tag => (
+                          <span key={tag} className="text-xs bg-[#2E2E2E] text-[#6B7280] px-2 py-0.5 rounded-full">{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[#C62D36] font-bold text-lg">{hpPrice}€</div>
+                      <div className="text-[#6B7280] text-xs">{currentService.duration} min</div>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Evolve */}
+                <button
+                  disabled={eprice === null}
+                  onClick={() => { if (eprice !== null) setSel(s => ({ ...s, gamme: "evolve" })); }}
+                  className={`w-full text-left px-5 py-5 rounded-xl border transition-all ${
+                    eprice === null ? "opacity-40 cursor-not-allowed border-[#2E2E2E] bg-[#1A1A1A]" :
                     sel.gamme === "evolve"
                       ? "border-[#C62D36] bg-[#C62D36]/10"
                       : "border-[#C62D36]/30 bg-[#1A1A1A] hover:border-[#C62D36]/60"
@@ -458,7 +508,7 @@ export function VehicleBookingWizard() {
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-white font-bold text-base">Gamme Evolve</span>
                         <span className="text-xs bg-[#C62D36]/20 text-[#C62D36] px-2 py-0.5 rounded-full font-semibold">Premium</span>
-                        {unavailable && <span className="text-xs text-[#6B7280]">· Non disponible</span>}
+                        {eprice === null && <span className="text-xs text-[#6B7280]">· Non disponible</span>}
                       </div>
                       <p className="text-[#9CA3AF] text-sm mb-3">Film nano-céramique haut de gamme. Rejet thermique exceptionnel, clarté visuelle maximale et protection UV renforcée. La référence absolue.</p>
                       <div className="flex flex-wrap gap-2">
@@ -468,10 +518,10 @@ export function VehicleBookingWizard() {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      {ep !== null ? (
+                      {eprice !== null ? (
                         <>
-                          <div className="text-[#C62D36] font-bold text-lg">{ep}€</div>
-                          <div className="text-[#6B7280] text-xs">dès</div>
+                          <div className="text-[#C62D36] font-bold text-lg">{eprice}€</div>
+                          <div className="text-[#6B7280] text-xs">{currentService.duration} min</div>
                         </>
                       ) : (
                         <div className="text-[#6B7280] text-sm">N/A</div>
@@ -479,9 +529,10 @@ export function VehicleBookingWizard() {
                     </div>
                   </div>
                 </button>
-              );
-            })()}
-          </div>
+              </div>
+            );
+          })()}
+
 
           {/* Comparison note */}
           <div className="mt-4 bg-[#1A1A1A] border border-[#2E2E2E] rounded-xl p-4">
